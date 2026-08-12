@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}My Trips · AI Travel Planner{% endblock %}
+{% block description %}All the AI itineraries you have saved, with destination, budget in rupees, days, travel type and interests.{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <h1>My Trips</h1>
+  <p>Every itinerary you saved from the AI planner, stored in the app database.</p>
+</div>
+
+<section class="section" style="padding-top:26px">
+  <div class="container" id="tripsRoot"></div>
+</section>
+{% endblock %}
+
+{% block scripts %}<script src="{{ url_for('static', filename='js/my_trips.js') }}"></script>{% endblock %}

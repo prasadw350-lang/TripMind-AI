@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}AI Planner · AI Travel Planner{% endblock %}
+{% block description %}Generate a full day-by-day itinerary with hotels, restaurants, activities, packing, safety notes and a rupee budget breakdown.{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <h1>AI Travel Planner</h1>
+  <p>A complete plan for your destination: overview, day-by-day itinerary, stays, food, activities, tips and a total-budget breakdown in rupees.</p>
+</div>
+
+<div class="workspace">
+  {% with panel_title = 'Trip setup', panel_sub = 'Everything below shapes the itinerary.', submit_label = 'Generate AI Trip' %}
+    {% include "_prefs_panel.html" %}
+  {% endwith %}
+
+  <div class="results-area" id="results">
+    <div class="empty-state card card-pad">
+      <h3>No itinerary yet</h3>
+      <p>Set your destination and preferences, then generate the plan. You can save any generated trip to My Trips.</p>
+      <a class="btn btn-outline" href="{{ url_for('ml_prediction') }}">Find a destination with ML</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}<script src="{{ url_for('static', filename='js/planner.js') }}"></script>{% endblock %}

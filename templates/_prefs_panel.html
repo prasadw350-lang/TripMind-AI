@@ -1,0 +1,58 @@
+{# Shared preference panel used by the AI Recommendation and Planner pages. #}
+<form class="panel" id="prefForm" novalidate>
+  <h2>{{ panel_title }}</h2>
+  <p class="panel-sub">{{ panel_sub }}</p>
+
+  <div class="field">
+    <label for="destination">Destination</label>
+    <input type="text" id="destination" name="destination" placeholder="Pick from ML Prediction or type a city" maxlength="80" required />
+    <input type="hidden" id="country" name="country" />
+    <p class="hint">Tip: run <a href="{{ url_for('ml_prediction') }}" style="color:#8fbcff">ML Prediction</a> to fill this from the model.</p>
+  </div>
+
+  <div class="field">
+    <label for="budget_inr">Total budget (₹)</label>
+    <input type="number" id="budget_inr" name="budget_inr" min="1000" step="500" placeholder="50000" required />
+    <p class="hint" id="perDayHint">Budget covers the entire trip, not each day.</p>
+  </div>
+
+  <div class="field">
+    <label for="days">Days</label>
+    <input type="number" id="days" name="days" min="1" max="60" value="5" required />
+  </div>
+
+  <div class="field">
+    <span class="label">Travel type</span>
+    <div class="seg">
+      {% for t in travel_types %}
+      <label class="chip"><input type="radio" name="travel_type" value="{{ t }}" {{ 'checked' if loop.first }} /><span>{{ t }}</span></label>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="field">
+    <span class="label">Season</span>
+    <div class="seg">
+      {% for s in seasons %}
+      <label class="chip"><input type="radio" name="season" value="{{ s }}" {{ 'checked' if loop.first }} /><span>{{ s }}</span></label>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="field">
+    <span class="label">Interests</span>
+    <div class="chip-group">
+      {% for i in interest_options %}
+      <label class="chip"><input type="checkbox" name="interests" value="{{ i }}" /><span>{{ i }}</span></label>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="start_location">Starting location</label>
+    <input type="text" id="start_location" name="start_location" placeholder="Mumbai, India" maxlength="80" />
+  </div>
+
+  <div class="divider"></div>
+  <button type="submit" class="btn btn-accent btn-block" id="generateBtn">{{ submit_label }}</button>
+</form>

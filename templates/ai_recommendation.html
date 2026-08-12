@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}AI Recommendation · AI Travel Planner{% endblock %}
+{% block description %}Get an AI-written destination briefing built from your own budget, dates, travel type and interests, with costs in Indian Rupees.{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <h1>AI Travel Recommendation</h1>
+  <p>A destination briefing written for your inputs — why it fits, what to see, how to get there and whether your total rupee budget works.</p>
+</div>
+
+<div class="workspace">
+  {% with panel_title = 'Your trip', panel_sub = 'The AI uses these exact inputs.', submit_label = 'Generate AI Briefing' %}
+    {% include "_prefs_panel.html" %}
+  {% endwith %}
+
+  <div class="results-area" id="results">
+    <div class="empty-state card card-pad">
+      <h3>No briefing yet</h3>
+      <p>Choose a destination — or bring one over from ML Prediction — and generate an AI briefing tailored to your budget and interests.</p>
+      <a class="btn btn-outline" href="{{ url_for('ml_prediction') }}">Run ML Prediction first</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}<script src="{{ url_for('static', filename='js/ai_recommendation.js') }}"></script>{% endblock %}

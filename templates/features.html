@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Features · AI Travel Planner{% endblock %}
+{% block description %}ML destination matching, AI itinerary generation, total-trip rupee budgeting, direct interest selection and dynamic destination imagery.{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <h1>Features</h1>
+  <p>Everything listed here is implemented and working in this application.</p>
+</div>
+
+<section class="section" style="padding-top:26px">
+  <div class="container">
+    <div class="grid grid-3">
+      <div class="card card-pad"><h3>AI Travel Planner</h3><p>Gemini generates an overview, a day-by-day itinerary, hotels, restaurants, activities, tips, packing and safety notes for the destination you selected.</p><a class="btn btn-outline btn-sm" href="{{ url_for('planner') }}">Open planner</a></div>
+      <div class="card card-pad"><h3>ML Destination Recommendation</h3><p>The supplied scikit-learn nearest-neighbour model ranks 560 destinations by cosine similarity against your encoded preferences.</p><a class="btn btn-outline btn-sm" href="{{ url_for('ml_prediction') }}">Open ML prediction</a></div>
+      <div class="card card-pad"><h3>Smart Budget Planning</h3><p>Budget is always the total for the whole trip in Indian Rupees. It drives the model's budget level, the cost estimates and every AI prompt.</p></div>
+      <div class="card card-pad"><h3>Personalised Interests</h3><p>Pick interests directly — Adventure, Beach, Culture, Food, Nature and more. Each maps onto the model's own feature columns.</p></div>
+      <div class="card card-pad"><h3>Destination Images</h3><p>Photography is fetched per destination through the Python image service, with a safe fallback if the image API is unavailable.</p></div>
+      <div class="card card-pad"><h3>Saved Trips</h3><p>Any generated itinerary can be saved to SQLite and reopened later from My Trips.</p><a class="btn btn-outline btn-sm" href="{{ url_for('my_trips') }}">Open my trips</a></div>
+    </div>
+  </div>
+</section>
+{% endblock %}

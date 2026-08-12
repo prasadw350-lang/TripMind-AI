@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Sign in · TripMind AI{% endblock %}
+{% block description %}Sign in to TripMind AI to get machine-learning destination matches and AI itineraries budgeted in Indian Rupees.{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}" />{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-visual">
+    <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1400&q=70" alt="Coastline at sunrise" />
+    <div class="auth-quote">
+      <h2>Your next adventure, perfected by intelligence</h2>
+      <p>Machine-learning destination matching and AI-built itineraries — planned around your total budget in Indian Rupees.</p>
+    </div>
+  </div>
+
+  <div class="auth-panel">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <h1>TripMind AI</h1>
+        <p id="authSubtitle">Sign in to continue planning</p>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ 'error' if category == 'error' else 'success' }}">{{ message }}</div>
+        {% endfor %}
+      {% endwith %}
+
+      <form method="post" id="authForm" novalidate>
+        <input type="hidden" name="action" id="authAction" value="login" />
+        <div class="field">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" placeholder="user@example.com" autocomplete="email" required />
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" placeholder="••••••••••" autocomplete="current-password" required minlength="6" />
+          <p class="pw-hint">Minimum 6 characters.</p>
+        </div>
+
+        <div class="auth-row">
+          <label class="remember"><input type="checkbox" name="remember" value="1" /> Remember me</label>
+          <button type="button" class="auth-link" id="forgotBtn">Forgot password?</button>
+        </div>
+
+        <div class="auth-actions">
+          <button type="submit" class="btn btn-primary btn-block" id="loginBtn">Login</button>
+          <button type="submit" class="btn btn-accent btn-block" id="registerBtn">Register</button>
+        </div>
+      </form>
+
+      <p class="auth-foot">Accounts are stored securely in the app's SQLite database.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}<script src="{{ url_for('static', filename='js/login.js') }}"></script>{% endblock %}

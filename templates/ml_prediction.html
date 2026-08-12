@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}ML Prediction · AI Travel Planner{% endblock %}
+{% block description %}Enter your total trip budget in rupees, days, travel type, season and interests to get ranked destination matches from the trained recommendation model.{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <h1>ML Travel Recommendation</h1>
+  <p>Your preferences are converted into the exact feature vector the model was trained on, then matched against 560 destinations by cosine similarity.</p>
+</div>
+
+<div class="workspace">
+  <form class="panel" id="prefForm" novalidate>
+    <h2>Inputs</h2>
+    <p class="panel-sub">Budget is the total for the whole trip, not per day.</p>
+
+    <div class="field">
+      <label for="budget_inr">Total budget (₹)</label>
+      <input type="number" id="budget_inr" name="budget_inr" min="1000" step="500" placeholder="50000" required />
+      <p class="hint" id="perDayHint">Enter budget and days to see the per-day split.</p>
+    </div>
+
+    <div class="field">
+      <label for="days">Days</label>
+      <input type="number" id="days" name="days" min="1" max="60" value="7" required />
+    </div>
+
+    <div class="field">
+      <span class="label">Travel type</span>
+      <div class="seg">
+        {% for t in travel_types %}
+        <label class="chip"><input type="radio" name="travel_type" value="{{ t }}" {{ 'checked' if loop.first }} /><span>{{ t }}</span></label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="field">
+      <span class="label">Season</span>
+      <div class="seg">
+        {% for s in seasons %}
+        <label class="chip"><input type="radio" name="season" value="{{ s }}" {{ 'checked' if loop.first }} /><span>{{ s }}</span></label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="field">
+      <span class="label">Interests</span>
+      <div class="chip-group">
+        {% for i in interest_options %}
+        <label class="chip"><input type="checkbox" name="interests" value="{{ i }}" /><span>{{ i }}</span></label>
+        {% endfor %}
+      </div>
+      <p class="hint">Selected interests map directly to the model's rating columns.</p>
+    </div>
+
+    <div class="field">
+      <label for="start_location">Starting location</label>
+      <input type="text" id="start_location" name="start_location" placeholder="Mumbai, India" maxlength="80" />
+    </div>
+
+    <div class="divider"></div>
+    <button type="submit" class="btn btn-accent btn-block" id="predictBtn">Predict Destination</button>
+  </form>
+
+  <div class="results-area" id="results">
+    <div class="empty-state card card-pad">
+      <h3>No predictions yet</h3>
+      <p>Fill in your preferences and run the model to see ranked destinations with match scores, best travel month and estimated total cost in rupees.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}<script src="{{ url_for('static', filename='js/ml_prediction.js') }}"></script>{% endblock %}

@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Contact · AI Travel Planner{% endblock %}
+{% block description %}Send a message to the AI Travel Planner team. Messages are stored securely through Flask and SQLite.{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <h1>Contact</h1>
+  <p>Questions, feedback or a bug report — send it over and it will be stored for the team.</p>
+</div>
+
+<section class="section" style="padding-top:26px">
+  <div class="container" style="max-width:720px">
+    <form class="card card-pad" id="contactForm" novalidate>
+      <div class="field">
+        <label for="name">Name</label>
+        <input type="text" id="name" name="name" maxlength="100" placeholder="Your name" required />
+      </div>
+      <div class="field">
+        <label for="cemail">Email</label>
+        <input type="email" id="cemail" name="email" maxlength="255" placeholder="you@example.com" value="{{ user.email if user }}" required />
+      </div>
+      <div class="field">
+        <label for="message">Message</label>
+        <textarea id="message" name="message" maxlength="1000" placeholder="How can we help?" required></textarea>
+        <p class="hint"><span id="charCount">0</span>/1000 characters</p>
+      </div>
+      <button type="submit" class="btn btn-primary" id="contactBtn">Send message</button>
+      <div id="contactStatus" style="margin-top:14px"></div>
+    </form>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}<script src="{{ url_for('static', filename='js/contact.js') }}"></script>{% endblock %}
