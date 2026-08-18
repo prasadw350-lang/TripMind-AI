@@ -1,8 +1,9 @@
-"""Gemini AI service for AI Travel Planner."""
+"""AI service with automatic Gemini -> Groq -> OpenRouter fallback."""
 
 import json
 import re
 
+import requests
 from google import genai
 from google.genai import types
 
@@ -14,13 +15,15 @@ class GeminiError(Exception):
 
 
 # ---------------------------------------------------------
-# Gemini client
+# Clients
 # ---------------------------------------------------------
 
-if not config.GEMINI_API_KEY:
-    client = None
-else:
-    client = genai.Client(api_key=config.GEMINI_API_KEY)
+gemini_client = None
+
+if config.GEMINI_API_KEY:
+    gemini_client = genai.Client(
+        api_key=config.GEMINI_API_KEY
+    )
 
 
 # ---------------------------------------------------------
@@ -28,29 +31,41 @@ else:
 # ---------------------------------------------------------
 
 def _extract_json(text: str):
+
     if not text:
-        raise GeminiError("Gemini returned an empty response.")
+        raise GeminiError("AI returned an empty response.")
 
     text = text.strip()
 
-    # Remove markdown code fences
-    text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.IGNORECASE)
-    text = re.sub(r"\s*```$", "", text)
+    text = re.sub(
+        r"^```(?:json)?\s*",
+        "",
+        text,
+        flags=re.IGNORECASE,
+    )
+
+    text = re.sub(
+        r"\s*```$",
+        "",
+        text,
+    )
 
     try:
         return json.loads(text)
+
     except json.JSONDecodeError:
         pass
 
-    # Try to extract a JSON object
     start = text.find("{")
     end = text.rfind("}")
 
     if start != -1 and end != -1 and end > start:
+
         candidate = text[start:end + 1]
 
         try:
             return json.loads(candidate)
+
         except json.JSONDecodeError:
             pass
 
@@ -60,69 +75,320 @@ def _extract_json(text: str):
 
 
 # ---------------------------------------------------------
-# Gemini call
+# Gemini
 # ---------------------------------------------------------
 
-def _call(prompt: str):
-    if client is None:
+def _call_gemini(prompt: str):
+
+    if gemini_client is None:
         raise GeminiError(
-            "Gemini is not configured. "
-            "Add GEMINI_API_KEY to your .env file and restart the server."
+            "Gemini API key is not configured."
         )
 
     model = getattr(
         config,
         "GEMINI_MODEL",
-        "gemini-3.5-flash"
-    )
+        "",
+    ) or "gemini-3.5-flash"
 
     try:
-        response = client.models.generate_content(
+
+        response = gemini_client.models.generate_content(
             model=model,
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json"
-            )
+            ),
         )
 
+        text = getattr(
+            response,
+            "text",
+            None,
+        )
+
+        if not text:
+            raise GeminiError(
+                "Gemini returned an empty response."
+            )
+
+        return _extract_json(text)
+
     except Exception as exc:
-        print("GEMINI ERROR:", repr(exc))
 
         message = str(exc)
 
-        if "429" in message:
+        print(
+            "GEMINI FAILED:",
+            repr(exc),
+        )
+
+        if (
+            "429" in message
+            or "quota" in message.lower()
+            or "rate limit" in message.lower()
+        ):
             raise GeminiError(
-                "Gemini rate limit reached. Please wait and try again."
+                "Gemini quota/rate limit reached."
             )
 
         if "401" in message or "403" in message:
             raise GeminiError(
-                "Gemini API key was rejected. Check GEMINI_API_KEY."
+                "Gemini authentication failed."
             )
 
         if "404" in message:
             raise GeminiError(
-                f"Gemini model '{model}' is unavailable. "
-                "Check GEMINI_MODEL in your .env file."
+                f"Gemini model '{model}' is unavailable."
             )
 
-        if "503" in message:
+        raise GeminiError(
+            "Gemini request failed."
+        )
+
+
+# ---------------------------------------------------------
+# Groq
+# ---------------------------------------------------------
+
+def _call_groq(prompt: str):
+
+    api_key = getattr(
+        config,
+        "GROQ_API_KEY",
+        "",
+    )
+
+    if not api_key:
+        raise GeminiError(
+            "Groq API key is not configured."
+        )
+
+    model = getattr(
+        config,
+        "GROQ_MODEL",
+        "",
+    ) or "llama-3.3-70b-versatile"
+
+    url = "https://api.groq.com/openai/v1/chat/completions"
+
+    payload = {
+        "model": model,
+        "messages": [
+            {
+                "role": "user",
+                "content": prompt,
+            }
+        ],
+        "temperature": 0.7,
+        "response_format": {
+            "type": "json_object"
+        },
+    }
+
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
+
+    try:
+
+        response = requests.post(
+            url,
+            headers=headers,
+            json=payload,
+            timeout=90,
+        )
+
+        if response.status_code == 429:
             raise GeminiError(
-                "Gemini is temporarily unavailable. Please try again."
+                "Groq rate limit reached."
             )
 
-        raise GeminiError(
-            "Gemini service error: " + message
+        if response.status_code in (401, 403):
+            raise GeminiError(
+                "Groq authentication failed."
+            )
+
+        response.raise_for_status()
+
+        data = response.json()
+
+        text = (
+            data["choices"][0]
+            ["message"]
+            ["content"]
         )
 
-    text = getattr(response, "text", None)
+        return _extract_json(text)
 
-    if not text:
-        raise GeminiError(
-            "Gemini returned an empty response."
+    except GeminiError:
+        raise
+
+    except Exception as exc:
+
+        print(
+            "GROQ FAILED:",
+            repr(exc),
         )
 
-    return _extract_json(text)
+        raise GeminiError(
+            "Groq request failed."
+        )
+
+
+# ---------------------------------------------------------
+# OpenRouter
+# ---------------------------------------------------------
+
+def _call_openrouter(prompt: str):
+
+    api_key = getattr(
+        config,
+        "OPENROUTER_API_KEY",
+        "",
+    )
+
+    if not api_key:
+        raise GeminiError(
+            "OpenRouter API key is not configured."
+        )
+
+    model = getattr(
+        config,
+        "OPENROUTER_MODEL",
+        "",
+    ) or "openrouter/free"
+
+    url = "https://openrouter.ai/api/v1/chat/completions"
+
+    payload = {
+        "model": model,
+        "messages": [
+            {
+                "role": "user",
+                "content": prompt,
+            }
+        ],
+        "temperature": 0.7,
+        "response_format": {
+            "type": "json_object"
+        },
+    }
+
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://tripmind-ai-p08x.onrender.com",
+        "X-Title": "TripMind AI",
+    }
+
+    try:
+
+        response = requests.post(
+            url,
+            headers=headers,
+            json=payload,
+            timeout=90,
+        )
+
+        if response.status_code == 429:
+            raise GeminiError(
+                "OpenRouter rate limit reached."
+            )
+
+        if response.status_code in (401, 403):
+            raise GeminiError(
+                "OpenRouter authentication failed."
+            )
+
+        response.raise_for_status()
+
+        data = response.json()
+
+        text = (
+            data["choices"][0]
+            ["message"]
+            ["content"]
+        )
+
+        return _extract_json(text)
+
+    except GeminiError:
+        raise
+
+    except Exception as exc:
+
+        print(
+            "OPENROUTER FAILED:",
+            repr(exc),
+        )
+
+        raise GeminiError(
+            "OpenRouter request failed."
+        )
+
+
+# ---------------------------------------------------------
+# Automatic fallback router
+# ---------------------------------------------------------
+
+def _call(prompt: str):
+
+    providers = [
+        (
+            "Gemini",
+            _call_gemini,
+        ),
+        (
+            "Groq",
+            _call_groq,
+        ),
+        (
+            "OpenRouter",
+            _call_openrouter,
+        ),
+    ]
+
+    errors = []
+
+    for name, provider in providers:
+
+        try:
+
+            print(
+                f"AI PROVIDER: Trying {name}"
+            )
+
+            result = provider(prompt)
+
+            print(
+                f"AI PROVIDER: {name} succeeded"
+            )
+
+            return result
+
+        except Exception as exc:
+
+            error = str(exc)
+
+            errors.append(
+                f"{name}: {error}"
+            )
+
+            print(
+                f"AI PROVIDER: {name} failed -> {error}"
+            )
+
+    print(
+        "ALL AI PROVIDERS FAILED:",
+        errors,
+    )
+
+    raise GeminiError(
+        "All AI providers are currently unavailable. "
+        "Please try again later."
+    )
 
 
 # ---------------------------------------------------------
@@ -177,12 +443,12 @@ IMPORTANT RULES:
 14. Consider all selected interests.
 15. Return ONLY valid JSON.
 16. Do not use Markdown.
-17. Do not put JSON inside ``` code fences.
+17. Do not put JSON inside code fences.
 """
 
 
 # ---------------------------------------------------------
-# AI Recommendation / Destination briefing
+# AI Recommendation
 # ---------------------------------------------------------
 
 def generate_insight(ctx: dict) -> dict:
@@ -362,12 +628,14 @@ Return exactly this JSON structure:
 
     result = _call(prompt)
 
-    # Ensure itinerary length is correct
-    itinerary = result.get("itinerary", [])
+    itinerary = result.get(
+        "itinerary",
+        [],
+    )
 
     if len(itinerary) != days:
         raise GeminiError(
-            f"Gemini returned {len(itinerary)} days instead of {days}."
+            f"AI returned {len(itinerary)} days instead of {days}."
         )
 
     return result
