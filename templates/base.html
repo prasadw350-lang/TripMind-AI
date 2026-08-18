@@ -29,8 +29,6 @@
 
       <nav class="nav" id="mainNav">
         <a href="{{ url_for('home') }}" class="{{ 'active' if active == 'home' }}">Home</a>
-        <a href="{{ url_for('home') }}#about" class="{{ 'active' if active == 'about' }}">About</a>
-        <a href="{{ url_for('features') }}" class="{{ 'active' if active == 'features' }}">Features</a>
         <a href="{{ url_for('planner') }}" class="{{ 'active' if active == 'planner' }}">Planner</a>
         <a href="{{ url_for('ai_recommendation') }}" class="{{ 'active' if active == 'ai' }}">AI Recommendation</a>
         <a href="{{ url_for('ml_prediction') }}" class="{{ 'active' if active == 'ml' }}">ML Prediction</a>
@@ -72,6 +70,7 @@
       </div>
     </div>
     <div class="footer-bottom">&copy; 2026 TripMind AI. All rights reserved.</div>
+    <p>Designed &amp; Developed by <strong>Prasad Wankhade</strong></p>
   </footer>
 
   <div id="toastHost" class="toast-host" aria-live="polite"></div>

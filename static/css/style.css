@@ -237,3 +237,17 @@ textarea { resize: vertical; min-height: 130px; }
 }
 @keyframes shimmer { to { background-position: -300% 0; } }
 .hidden { display: none !important; }
+
+.site-footer {
+    text-align: center;
+    padding: 24px 20px;
+    margin-top: 50px;
+}
+
+.footer-content p {
+    margin: 5px 0;
+}
+
+.footer-content strong {
+    font-weight: 600;
+}
